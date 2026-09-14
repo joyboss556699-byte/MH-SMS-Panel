@@ -14,7 +14,10 @@
 ‎    }
 ‎
 ‎    const url = new URL(request.url);
-‎    const targetUrl = VOLTAX_BASE + url.pathname + url.search;
+‎    
+‎    // /api/voltax কেটে ফেলুন, শুধু /getnum, /console ইত্যাদি রাখুন
+‎    let path = url.pathname.replace(/^\/api\/voltax/, "") || "/";
+‎    const targetUrl = VOLTAX_BASE + path + url.search;
 ‎
 ‎    const headers = new Headers();
 ‎    headers.set("mauthapi", VOLTAX_KEY);
@@ -39,5 +42,5 @@
 ‎        "Content-Type": "application/json",
 ‎      },
 ‎    });
-‎  }
+‎  },
 ‎};
