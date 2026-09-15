@@ -111,6 +111,11 @@ tailwind.config = {
           <input type="password" id="authPassword" class="input-field w-full px-4 py-3 rounded-xl" placeholder="••••••••" required minlength="6">
         </div>
 
+        <div id="rememberLoginWrap" class="flex items-center gap-2 -mt-1">
+          <input type="checkbox" id="rememberLogin" checked class="w-4 h-4 rounded">
+          <label for="rememberLogin" class="text-sm text-gray-400 cursor-pointer">Remember login for 5 hours</label>
+        </div>
+
         <div id="registerFields" class="hidden space-y-4">
           <div class="grid grid-cols-2 gap-4">
             <div>
@@ -562,7 +567,7 @@ const EMAILJS_SERVICE_ID = "service_soa0kzg";
 const EMAILJS_TEMPLATE_ID = "template_y9zho54";
 const ADMIN_EMAIL = "joyboss556699@gmail.com";
 const ADMIN_COLLECTION = "admins";
-const SESSION_DURATION = 24 * 60 * 60 * 1000;
+const SESSION_DURATION = 5 * 60 * 60 * 1000;
 const OTP_EXPIRY_MS = 10 * 60 * 1000;
 
 // ==================== VOLTAX CONFIG ====================
@@ -690,7 +695,12 @@ function extractOtpCode(message) {
 
 // ==================== SESSION ====================
 function saveSession(uid) {
-  localStorage.setItem('mh_session', JSON.stringify({ uid, loginTime: Date.now() }));
+  localStorage.setItem('mh_session', JSON.stringify({
+    uid,
+    loginTime: Date.now(),
+    remember: true,
+    expiresAt: Date.now() + SESSION_DURATION
+  }));
 }
 function checkSession() {
   try {
@@ -724,6 +734,8 @@ function setAuthMode(mode) {
   document.getElementById('registerTab').className = mode === 'register' ? 'flex-1 py-2 rounded-lg bg-primary text-white font-bold' : 'flex-1 py-2 rounded-lg bg-gray-700 text-white font-bold';
   document.getElementById('nameField').classList.toggle('hidden', mode === 'login');
   document.getElementById('registerFields').classList.toggle('hidden', mode === 'login');
+  const rememberWrap = document.getElementById('rememberLoginWrap');
+  if (rememberWrap) rememberWrap.classList.toggle('hidden', mode !== 'login');
   document.getElementById('authSubmitBtn').textContent = mode === 'login' ? 'Sign In' : 'Create Account';
   document.getElementById('authSubtitle').textContent = mode === 'login' ? 'Sign in to your account' : 'Create your account';
   const forgotWrap = document.getElementById('forgotPasswordWrap');
@@ -765,6 +777,15 @@ document.getElementById('authForm').addEventListener('submit', async (e) => {
 
   try {
     if (authMode === 'login') {
+      // Keep Firebase authentication persisted so a remembered login can
+      // reopen the app without asking for the password again.
+      if (auth.setPersistence && firebase.auth && firebase.auth.Auth && firebase.auth.Auth.Persistence) {
+        const remember = document.getElementById('rememberLogin')?.checked !== false;
+        await auth.setPersistence(remember
+          ? firebase.auth.Auth.Persistence.LOCAL
+          : firebase.auth.Auth.Persistence.SESSION);
+      }
+
       const cred = await withTimeout(auth.signInWithEmailAndPassword(email, password), 20000, 'Login request');
 
       if (email === ADMIN_EMAIL.toLowerCase()) {
@@ -2249,4 +2270,4 @@ window.addEventListener('beforeunload', () => {
 });
 </script>
 </body>
-                </html>
+</html>
