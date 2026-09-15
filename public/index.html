@@ -881,7 +881,23 @@ document.getElementById('authForm').addEventListener('submit', async (e) => {
       }
     }
   } catch (err) {
-    const msg = String(err?.message || 'Something went wrong').replace('Firebase: ', '');
+    const code = String(err?.code || '');
+    let msg = String(err?.message || 'Something went wrong').replace(/^Firebase:\s*/i, '');
+
+    // Give a clear message for Firebase credential failures instead of
+    // exposing the raw provider error string. This does not bypass Firebase
+    // authentication; the password/account still has to be valid.
+    if (code === 'auth/invalid-credential' ||
+        code === 'auth/invalid-login-credentials' ||
+        code === 'auth/wrong-password' ||
+        code === 'auth/user-not-found') {
+      msg = 'Email or password is incorrect. If the account was deleted, use Register to create it again.';
+      clearSession();
+    } else if (code === 'auth/user-disabled') {
+      msg = 'This account has been disabled. Please contact the administrator.';
+      clearSession();
+    }
+
     toast(msg, 'error', 7000);
   } finally {
     setBtnLoading(btn, false);
