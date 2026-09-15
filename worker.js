@@ -1,39 +1,102 @@
-/**
- * MH SMS Panel - Zenex Proxy Worker
- * API key is read from the Cloudflare Worker Secret ZENEX_API_KEY.
- * All /api/zenex/* requests are proxied to the Zenex Core API.
- */
-const ZENEX_CORE_BASE = "https://api.zenexnetwork.com";
-const ZENEX_WEB_BASE  = "https://www.zenexnetwork.com";
-const ALLOWED_PREFIX = "/api/zenex/";
+const CONFIG_KEY = 'zenex:config';
+const ADMIN_EMAIL = 'joyboss556699@gmail.com';
+// Firebase Web API keys are client identifiers, not server secrets.
+const FIREBASE_WEB_API_KEY = 'AIzaSyAG3qckC4mWEMwwOLGnaSjD8vugKDDe640';
 
 function corsHeaders(origin) {
   return {
-    "Access-Control-Allow-Origin": origin || "*",
-    "Access-Control-Allow-Headers": "Content-Type, mapikey",
-    "Access-Control-Allow-Methods": "GET, POST, OPTIONS"
+    'Access-Control-Allow-Origin': origin || '*',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Cache-Control': 'no-store'
   };
 }
 
-function json(data, status, origin) {
+function json(data, status = 200, origin = '') {
   return new Response(JSON.stringify(data), {
     status,
-    headers: {
-      "Content-Type": "application/json; charset=utf-8",
-      ...corsHeaders(origin)
-    }
+    headers: { 'Content-Type': 'application/json; charset=utf-8', ...corsHeaders(origin) }
   });
 }
 
-function getApiKey(request, env) {
-  if (env && env.ZENEX_API_KEY) return String(env.ZENEX_API_KEY).trim();
-  return String(request.headers.get("mapikey") || "").trim();
+async function verifyAdmin(request) {
+  const auth = request.headers.get('Authorization') || '';
+  const match = auth.match(/^Bearer\s+(.+)$/i);
+  if (!match) return { ok: false, status: 401, message: 'Authentication required.' };
+
+  try {
+    const res = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:lookup?key=${encodeURIComponent(FIREBASE_WEB_API_KEY)}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ idToken: match[1] })
+    });
+    const data = await res.json().catch(() => ({}));
+    const user = Array.isArray(data.users) ? data.users[0] : null;
+    const email = String(user?.email || '').trim().toLowerCase();
+    const verified = user?.emailVerified === true;
+
+    if (!res.ok || !user || !verified) {
+      return { ok: false, status: 401, message: 'Invalid or unverified Firebase session.' };
+    }
+    if (email !== ADMIN_EMAIL.toLowerCase()) {
+      return { ok: false, status: 403, message: 'Admin access required.' };
+    }
+    return { ok: true, email };
+  } catch {
+    return { ok: false, status: 502, message: 'Could not verify Firebase session.' };
+  }
 }
 
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
-    const origin = request.headers.get("Origin") || "*";
+    const origin = request.headers.get('Origin') || '';
+
+    if (request.method === 'OPTIONS') {
+      return new Response(null, { status: 204, headers: corsHeaders(origin) });
+    }
+
+    if (url.pathname === '/api/zenex/admin/config') {
+      const auth = await verifyAdmin(request);
+      if (!auth.ok) return json({ ok: false, message: auth.message }, auth.status, origin);
+      if (!env.ZENEX_CONFIG) return json({ ok: false, message: 'ZENEX_CONFIG KV binding is missing.' }, 500, origin);
+
+      if (request.method === 'GET') {
+        const stored = await env.ZENEX_CONFIG.get(CONFIG_KEY, 'json');
+        return json({ ok: true, configured: Boolean(stored?.apiKey), updatedAt: stored?.updatedAt || null }, 200, origin);
+      }
+
+      if (request.method === 'POST') {
+        const body = await request.json().catch(() => null);
+        const apiKey = String(body?.apiKey || '').trim();
+        if (!apiKey || apiKey.length < 8 || apiKey.length > 512) {
+          return json({ ok: false, message: 'Invalid Zenex API key.' }, 400, origin);
+        }
+
+        await env.ZENEX_CONFIG.put(CONFIG_KEY, JSON.stringify({
+          apiKey,
+          updatedAt: new Date().toISOString(),
+          updatedBy: auth.email
+        }));
+        return json({ ok: true, configured: true }, 200, origin);
+      }
+
+      return json({ ok: false, message: 'Method not allowed.' }, 405, origin);
+    }
+
+    if (url.pathname === '/api/zenex/admin/health' && request.method === 'GET') {
+      const auth = await verifyAdmin(request);
+      if (!auth.ok) return json({ ok: false, message: auth.message }, auth.status, origin);
+      if (!env.ZENEX_CONFIG) return json({ ok: false, message: 'ZENEX_CONFIG KV binding is missing.' }, 500, origin);
+      const stored = await env.ZENEX_CONFIG.get(CONFIG_KEY, 'json');
+      return json({ ok: true, configured: Boolean(stored?.apiKey), storage: 'Cloudflare KV' }, 200, origin);
+    }
+
+    // This package intentionally exposes only Admin configuration endpoints.
+    // It does not proxy incoming SMS/OTP payloads or public OTP feeds.
+    return json({ ok: false, message: 'Not found.' }, 404, origin);
+  }
+};
 
     if (request.method === "OPTIONS") {
       return new Response(null, { status: 204, headers: corsHeaders(origin) });
