@@ -1,23 +1,27 @@
-MH SMS PANEL - READY TO DEPLOY
+MH SMS PANEL - ZENEX ADMIN CONFIG READY
 
-1. Put the supplied index.html inside ./public/.
-2. Keep VOLTAX_API_KEY OUT of wrangler.jsonc and out of index.html.
-3. Add the Voltax credential as a Cloudflare Worker Secret named:
-   VOLTAX_API_KEY
-4. Deploy the Worker.
+What this package does:
+- Keeps the existing index.html UI.
+- Adds Admin-only Zenex API-key management through the Cloudflare Worker.
+- The Admin enters the key in Admin Panel -> Zenex API Provider -> Save.
+- The key is stored in Cloudflare KV, not in index.html or wrangler.jsonc.
+- The Worker verifies the Firebase session before allowing GET/POST config access.
+- No incoming SMS/OTP payload proxy or public OTP feed is included in this package.
 
-Wrangler:
-  npx wrangler login
-  npx wrangler secret put VOLTAX_API_KEY
-  npx wrangler deploy
+Files:
+  worker.js
+  wrangler.jsonc
+  public/index.html
 
-The Worker proxies:
-  POST /api/voltax/getnum
-  GET  /api/voltax/success-otp
-  GET  /api/voltax/console
+Setup:
+1. Create a Cloudflare KV namespace for this Worker.
+2. Put its namespace ID into wrangler.jsonc, replacing:
+   REPLACE_WITH_YOUR_KV_NAMESPACE_ID
+3. Deploy with Wrangler.
+4. Log in as the configured owner email and open Admin Panel.
+5. Enter the Zenex API key and press Save.
 
-The frontend uses the same-origin /api/voltax path and does not need the
-Voltax secret in browser code.
-
-IMPORTANT: if the credential was exposed publicly, revoke it and create a
-new credential before putting it into Cloudflare Secret storage.
+Important:
+- The admin email is currently: joyboss556699@gmail.com
+- The Firebase Web API key in worker.js is a client identifier; do not treat it as a secret.
+- This package is for Admin configuration only. It intentionally does not implement OTP/SMS retrieval or display.
