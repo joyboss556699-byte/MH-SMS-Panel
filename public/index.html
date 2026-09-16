@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MH SMS PANEL - Secure SMS Platform</title>
     
-    <!-- Firebase SDK (Compat version for single HTML file) -->
+    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
@@ -293,7 +293,7 @@
                         </div>
                     </div>
                     <div class="console-controls">
-                        <button class="btn btn-primary" style="width: auto; padding: 10px 20px;" onclick="refreshConsole()">🔄 Refresh</button>
+                        <button class="btn btn-primary" style="width: auto; padding: 10px 20px;" onclick="refreshConsole()"> Refresh</button>
                         <div class="checkbox-group">
                             <input type="checkbox" id="autoSync" checked onchange="toggleAutoSync()">
                             <label for="autoSync">Auto Sync (5s)</label>
@@ -303,7 +303,7 @@
                 </div>
             </div>
 
-            <!-- Other Sections (Placeholders based on your file) -->
+            <!-- Other Sections -->
             <div id="getNumberSection" class="hidden"><div class="console-container"><h2>Get Number</h2><p>Feature coming soon...</p></div></div>
             <div id="topUserSection" class="hidden"><div class="console-container"><h2>Top Users</h2><p>Users ranked by total OTP activity.</p></div></div>
             <div id="withdrawSection" class="hidden">
@@ -316,7 +316,7 @@
                     </div>
                     <div class="form-group">
                         <label>Amount (MIN: ৳ 50)</label>
-                        <input type="number" placeholder="৳">
+                        <input type="number" placeholder="">
                     </div>
                     <div class="form-group">
                         <label>Security PIN</label>
@@ -361,7 +361,7 @@
 
     <script>
         // ==========================================
-        // 1. FIREBASE CONFIGURATION (YOUR ACTUAL CONFIG)
+        // 1. FIREBASE CONFIGURATION
         // ==========================================
         const firebaseConfig = {
             apiKey: "AIzaSyAG3qckC4mWEMwwOLGnaSjD8vugKDDe640",
@@ -373,16 +373,16 @@
             measurementId: "G-JPGDB3GBZL"
         };
 
-        // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.firestore();
 
         // ==========================================
-        // 2. ZENEX API CONFIGURATION
+        // 2. ZENEX API CONFIGURATION (FIXED)
         // ==========================================
+        const ZENEX_API_BASE = 'https://api.zenexnetwork.com';
         const ZENEX_API_KEY = 'ZNX_5N3NLP36B6TNR6OGHKOX2JML';
-        const ZENEX_API_URL = 'https://api.zenex.io/v1';
+        const ZENEX_ENDPOINT = '/v1/numsuccess/info';
         
         let currentUser = null;
         let verificationCode = '';
@@ -462,7 +462,7 @@
             document.getElementById('authContainer').classList.add('hidden');
             document.getElementById('verificationModal').classList.remove('hidden');
             document.getElementById('verificationEmail').textContent = email;
-            document.getElementById('displayCode').textContent = verificationCode; // Showing code for testing
+            document.getElementById('displayCode').textContent = verificationCode;
         }
 
         function startTimer() {
@@ -583,29 +583,93 @@
         }
 
         // ==========================================
-        // 4. ZENEX API FUNCTIONS
+        // 4. ZENEX API FUNCTIONS (FIXED)
         // ==========================================
         async function fetchZenexData() {
             const output = document.getElementById('consoleOutput');
             const statusBadge = document.getElementById('consoleStatus');
             
             try {
-                const response = await fetch(`${ZENEX_API_URL}/numbers`, {
+                // ✅ সঠিক Zenex API call - Documentation অনুযায়ী
+                const response = await fetch(`${ZENEX_API_BASE}${ZENEX_ENDPOINT}`, {
                     method: 'GET',
                     headers: {
-                        'Authorization': `Bearer ${ZENEX_API_KEY}`,
+                        'mapike': ZENEX_API_KEY,  // ✅ সঠিক Authentication Header
                         'Content-Type': 'application/json'
                     }
                 });
 
-                if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                const data = await response.json();
+                if (response.status === 404) {
+                    output.innerHTML = `<div style="color: #ef4444;">❌ API Endpoint Not Found (404)</div>
+<div style="color: #94a3b8; margin-top: 10px;">
+⚠️ Zenex API URL ভুল।<br>
+ব্যবহার করুন: ${ZENEX_API_BASE}${ZENEX_ENDPOINT}
+</div>`;
+                    statusBadge.textContent = 'ERROR';
+                    statusBadge.className = 'error-badge';
+                    return;
+                }
+
+                if (response.status === 401 || response.status === 403) {
+                    output.innerHTML = `<div style="color: #ef4444;">❌ Authentication Failed (${response.status})</div>
+<div style="color: #94a3b8; margin-top: 10px;">
+️ API Key অবৈধ বা expired।<br>
+Key: ${ZENEX_API_KEY.substring(0, 15)}...
+</div>`;
+                    statusBadge.textContent = 'ERROR';
+                    statusBadge.className = 'error-badge';
+                    return;
+                }
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const result = await response.json();
                 
-                output.innerHTML = `<div style="color: #10b981;">✅ Connected to Zenex API</div>\n<div style="color: #94a3b8; margin-top: 10px;">${JSON.stringify(data, null, 2)}</div>`;
-                statusBadge.textContent = 'LIVE';
-                statusBadge.className = 'success-badge';
+                if (result.meta && result.meta.code === 200) {
+                    const otps = result.data.otps || [];
+                    
+                    if (otps.length === 0) {
+                        output.innerHTML = `<div style="color: #f59e0b;">⏳ Waiting for OTPs...</div>
+<div style="color: #94a3b8; margin-top: 10px;">
+📡 Polling every 5 seconds.<br>
+🔍 No OTPs received yet for your numbers.<br>
+💡 Provision a number first to start receiving OTPs.
+</div>`;
+                    } else {
+                        let otpHTML = `<div style="color: #10b981; margin-bottom: 15px; font-weight: bold;">✅ ${otps.length} OTP(s) Received</div>`;
+                        
+                        otps.forEach((otp, index) => {
+                            otpHTML += `
+<div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); padding: 15px; border-radius: 8px; margin-bottom: 10px;">
+    <div style="color: #3b82f6; font-weight: bold; margin-bottom: 5px;">📱 ${otp.number} (${otp.country})</div>
+    <div style="color: #e2e8f0; font-family: monospace; font-size: 18px; margin: 10px 0; padding: 10px; background: rgba(0,0,0,0.3); border-radius: 6px;">${otp.otp}</div>
+    <div style="color: #94a3b8; font-size: 12px;">
+        <span>📡 ${otp.operator}</span> | 
+        <span>🕐 ${otp.created_at}</span> |
+        <span>ID: ${otp.nid}</span>
+    </div>
+</div>`;
+                        });
+                        
+                        output.innerHTML = otpHTML;
+                    }
+                    
+                    statusBadge.textContent = 'LIVE';
+                    statusBadge.className = 'success-badge';
+                } else {
+                    output.innerHTML = `<div style="color: #ef4444;">❌ API Error: ${result.message || 'Unknown error'}</div>`;
+                    statusBadge.textContent = 'ERROR';
+                    statusBadge.className = 'error-badge';
+                }
+                
             } catch (error) {
-                output.innerHTML = `<div style="color: #ef4444;">❌ Error: ${error.message}</div>\n<div style="color: #94a3b8; margin-top: 10px;">⚠️ API Key may be invalid or expired.</div>`;
+                output.innerHTML = `<div style="color: #ef4444;">❌ Connection Error</div>
+<div style="color: #94a3b8; margin-top: 10px;">
+${error.message}<br>
+🔧 Check your internet connection and API settings.
+</div>`;
                 statusBadge.textContent = 'ERROR';
                 statusBadge.className = 'error-badge';
             }
@@ -643,8 +707,10 @@
         });
 
         document.addEventListener('DOMContentLoaded', () => {
-            console.log('MH SMS PANEL Loaded & Firebase Initialized');
+            console.log('✅ MH SMS PANEL Loaded');
+            console.log('✅ Firebase Initialized');
+            console.log('✅ Zenex API Configured:', ZENEX_API_BASE + ZENEX_ENDPOINT);
         });
     </script>
 </body>
-</html>
+    </html>
