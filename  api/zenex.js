@@ -1,4 +1,4 @@
-// api/zenex.js - Vercel Serverless Function
+// api/zenex.js - Vercel Serverless Function (CORRECTED)
 
 export default async function handler(req, res) {
   // CORS headers
@@ -31,33 +31,39 @@ export default async function handler(req, res) {
     let fetchOptions = {
       method: 'GET',
       headers: {
-        'mapkey': ZENEX_API_KEY,
+        'mapikey': ZENEX_API_KEY, // ✅ FIXED: mapikey (not mapkey)
         'Content-Type': 'application/json',
         'User-Agent': 'MH-SMS-Panel/1.0'
-      },
-      timeout: 10000
+      }
     };
 
     console.log(`📡 Zenex API Request: action=${action}`);
 
-    // Route handling
+    // Route handling based on documentation
     switch (action) {
       case 'getnum':
         targetUrl = `${ZENEX_BASE}/v1/getnum`;
         fetchOptions.method = 'POST';
-        fetchOptions.body = JSON.stringify(req.body || {});
+        fetchOptions.body = JSON.stringify(req.body || {
+          range: '22465XXX',
+          is_national: true,
+          remove_plus: false
+        });
         break;
 
       case 'numsuccess':
         targetUrl = `${ZENEX_BASE}/v1/numsuccess/info`;
+        fetchOptions.method = 'GET';
         break;
 
       case 'active-ranges':
         targetUrl = `${ZENEX_BASE}/v1/active-ranges`;
+        fetchOptions.method = 'GET';
         break;
 
       case 'global-broadcast':
         targetUrl = `${ZENEX_WEB}/api/v1/global-broadcast`;
+        fetchOptions.method = 'GET';
         break;
 
       default:
@@ -69,6 +75,7 @@ export default async function handler(req, res) {
     }
 
     console.log(`🔗 Fetching: ${targetUrl}`);
+    console.log(`🔑 Auth Header: mapikey=${ZENEX_API_KEY.substring(0, 10)}...`);
 
     // Fetch from Zenex API
     const response = await fetch(targetUrl, fetchOptions);
@@ -101,7 +108,7 @@ export default async function handler(req, res) {
 
     // Check if response is successful
     if (!response.ok) {
-      console.error(`❌ API Error: ${JSON.stringify(data)}`);
+      console.error(`❌ API Error (${response.status}):`, JSON.stringify(data));
       return res.status(response.status).json({
         success: false,
         error: data.error || 'API request failed',
@@ -114,8 +121,9 @@ export default async function handler(req, res) {
     console.log(`✅ Success: ${action}`);
     return res.status(200).json({
       success: true,
-      meta: { code: 200 },
-      data: data,
+      meta: data.meta || { code: 200, status: 'success' },
+      data: data.data || data,
+      message: data.message || 'Request successful',
       timestamp: new Date().toISOString()
     });
 
