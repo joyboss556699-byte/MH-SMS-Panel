@@ -139,7 +139,6 @@
         .alert-success { background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); color: #6ee7b7; }
         .alert-error { background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #fca5a5; }
         .gmail-note { font-size: 12px; color: #94a3b8; margin-top: 10px; text-align: center; }
-        .number-section { margin-bottom: 30px; }
         .feed-section { margin-top: 20px; }
         .feed-item {
             background: rgba(16, 185, 129, 0.05);
@@ -184,7 +183,7 @@
                 <button type="button" class="btn btn-google" onclick="googleLogin()">
                     G Continue with Google
                 </button>
-                <div class="gmail-note"> Gmail accounts only • @gmail.com</div>
+                <div class="gmail-note">📧 Gmail accounts only • @gmail.com</div>
             </form>
 
             <!-- Register Form -->
@@ -260,10 +259,8 @@
                 <div class="nav-item" onclick="showSection('dashboard')">Dashboard</div>
                 <div class="nav-item" onclick="showSection('getNumber')">Get Number</div>
                 <div class="nav-item" onclick="showSection('console')">Console</div>
-                <div class="nav-item" onclick="showSection('topUser')">Top User</div>
                 <div class="nav-item" onclick="showSection('withdraw')">Withdraw</div>
                 <div class="nav-item" onclick="showSection('profile')">Profile</div>
-                <div class="nav-item" onclick="showSection('channel')">Join Channel</div>
                 <div class="nav-item" onclick="showSection('api')">API Developer</div>
                 <div class="nav-item" onclick="showSection('admin')" id="adminMenu" style="display: none;">Admin Panel</div>
                 <div class="nav-item" onclick="logout()" style="border-color: #ef4444; color: #ef4444;">Logout</div>
@@ -287,7 +284,7 @@
                     </div>
                     <div class="stat-card">
                         <div class="stat-label">YESTERDAY</div>
-                        <div class="stat-value" id="yesterdayEarnings"> 0.00</div>
+                        <div class="stat-value" id="yesterdayEarnings">৳ 0.00</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-label">TOTAL OTPs</div>
@@ -304,7 +301,7 @@
                         </div>
                     </div>
                     <div class="console-controls">
-                        <button class="btn btn-primary" style="width: auto; padding: 10px 20px;" onclick="refreshConsole()">🔄 Refresh</button>
+                        <button class="btn btn-primary" style="width: auto; padding: 10px 20px;" onclick="refreshConsole()"> Refresh</button>
                         <div class="checkbox-group">
                             <input type="checkbox" id="autoSync" checked onchange="toggleAutoSync()">
                             <label for="autoSync">Auto Sync (5s)</label>
@@ -338,14 +335,6 @@
                         </div>
                     </div>
 
-                    <div style="margin-bottom: 20px;">
-                        <div class="stat-label">SUCCESS RATE</div>
-                        <div style="background: rgba(148, 163, 184, 0.2); height: 8px; border-radius: 4px; margin: 10px 0;">
-                            <div id="successRateBar" style="background: #10b981; height: 100%; border-radius: 4px; width: 0%; transition: width 0.3s;"></div>
-                        </div>
-                        <div style="text-align: right; color: #10b981; font-weight: bold;" id="successRateText">0.0%</div>
-                    </div>
-
                     <div class="form-group">
                         <label>TARGET RANGE / CODE</label>
                         <input type="text" id="numberRange" placeholder="22465XXX" value="22465XXX">
@@ -371,28 +360,8 @@
 
             <!-- Other Sections -->
             <div id="consoleSection" class="hidden"><div class="console-container"><h2>Live Console</h2><p>Check Dashboard for live console.</p></div></div>
-            <div id="topUserSection" class="hidden"><div class="console-container"><h2>Top Users</h2><p>Users ranked by total OTP activity.</p></div></div>
-            <div id="withdrawSection" class="hidden">
-                <div class="console-container">
-                    <h2>Manual Withdraw</h2>
-                    <p>1 Hr Cooldown | BKASH | NAGAD | ROCKET | BINANCE</p>
-                    <div class="form-group" style="margin-top: 15px;">
-                        <label>Account Number</label>
-                        <input type="text" placeholder="Enter number">
-                    </div>
-                    <div class="form-group">
-                        <label>Amount (MIN: ৳ 50)</label>
-                        <input type="number" placeholder="৳">
-                    </div>
-                    <div class="form-group">
-                        <label>Security PIN</label>
-                        <input type="password" maxlength="4" placeholder="****">
-                    </div>
-                    <button class="btn btn-primary">CONFIRM WITHDRAW</button>
-                </div>
-            </div>
-            <div id="profileSection" class="hidden"><div class="console-container"><h2>Personal Information</h2><p>Account ID, Full Name, Login Method (Google/Gmail)</p></div></div>
-            <div id="channelSection" class="hidden"><div class="console-container"><h2>Join Channel</h2><p>Join the official MH SMS Telegram channel for updates.</p><button class="btn btn-primary" style="margin-top:15px;">JOIN CHANNEL</button></div></div>
+            <div id="withdrawSection" class="hidden"><div class="console-container"><h2>Withdraw</h2><p>Withdrawal feature coming soon...</p></div></div>
+            <div id="profileSection" class="hidden"><div class="console-container"><h2>Profile</h2><p>Profile settings coming soon...</p></div></div>
             <div id="apiSection" class="hidden">
                 <div class="console-container">
                     <h2>API Developer</h2>
@@ -405,21 +374,8 @@
             </div>
             <div id="adminSection" class="hidden">
                 <div class="console-container">
-                    <h2>🛡️ Admin Panel</h2>
+                    <h2>️ Admin Panel</h2>
                     <p>Website management — users, balance, OTP rate, withdrawals and statistics.</p>
-                    <div class="stats-grid" style="margin-top: 20px;">
-                        <div class="stat-card"><div class="stat-label">TOTAL USERS</div><div class="stat-value">0</div></div>
-                        <div class="stat-card"><div class="stat-label">APPROVED USERS</div><div class="stat-value">0</div></div>
-                        <div class="stat-card"><div class="stat-label">PENDING WITHDRAW</div><div class="stat-value">0</div></div>
-                    </div>
-                    <div style="margin-top: 20px;">
-                        <h3>🔌 Zenex API Provider</h3>
-                        <p>Provider status: <span style="color: #ef4444;">OFF</span></p>
-                        <div class="form-group" style="margin-top: 10px;">
-                            <label>ZENEX API KEY (Cloudflare Worker Secret)</label>
-                            <input type="text" value="ZNX_5N3NLP36B6TNR6OGHKOX2JML" readonly>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>
@@ -444,10 +400,14 @@
         const db = firebase.firestore();
 
         // ==========================================
-        // 2. ZENEX API CONFIGURATION (V4.0 - FIXED)
+        // 2. ZENEX API CONFIGURATION (V4.0)
         // ==========================================
         const ZENEX_API_BASE = 'https://api.zenexnetwork.com';
         const ZENEX_API_KEY = 'ZNX_5N3NLP36B6TNR6OGHKOX2JML';
+        const ZENEX_HEADERS = {
+            'mapikey': ZENEX_API_KEY,
+            'Content-Type': 'application/json'
+        };
         
         let currentUser = null;
         let verificationCode = '';
@@ -486,42 +446,42 @@
 
         document.getElementById('loginForm').addEventListener('submit', function(e) {
             e.preventDefault();
-            const email = document.getElementById('loginEmail').value;
-            const password = document.getElementById('loginPassword').value;
-            
-            auth.signInWithEmailAndPassword(email, password)
-                .then((userCredential) => handleAuthSuccess(userCredential.user))
-                .catch((error) => alert('Login Error: ' + error.message));
+            auth.signInWithEmailAndPassword(
+                document.getElementById('loginEmail').value,
+                document.getElementById('loginPassword').value
+            )
+            .then((userCredential) => handleAuthSuccess(userCredential.user))
+            .catch((error) => alert('Login Error: ' + error.message));
         });
 
         document.getElementById('registerForm').addEventListener('submit', function(e) {
             e.preventDefault();
-            const email = document.getElementById('regEmail').value;
-            const password = document.getElementById('regPassword').value;
-            
             verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
             
-            auth.createUserWithEmailAndPassword(email, password)
-                .then((userCredential) => {
-                    return db.collection('users').doc(userCredential.user.uid).set({
-                        uid: userCredential.user.uid,
-                        email: email,
-                        fullName: document.getElementById('regName').value,
-                        mobile: document.getElementById('regMobile').value,
-                        country: document.getElementById('regCountry').value,
-                        withdrawPin: document.getElementById('regPin').value,
-                        telegram: document.getElementById('regTelegram').value,
-                        balance: 0, todayEarnings: 0, yesterdayEarnings: 0,
-                        todayOtp: 0, totalOtps: 0, approved: false,
-                        createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                        loginMethod: 'email'
-                    });
-                })
-                .then(() => {
-                    showVerificationModal(email);
-                    startTimer();
-                })
-                .catch((error) => alert('Registration Error: ' + error.message));
+            auth.createUserWithEmailAndPassword(
+                document.getElementById('regEmail').value,
+                document.getElementById('regPassword').value
+            )
+            .then((userCredential) => {
+                return db.collection('users').doc(userCredential.user.uid).set({
+                    uid: userCredential.user.uid,
+                    email: document.getElementById('regEmail').value,
+                    fullName: document.getElementById('regName').value,
+                    mobile: document.getElementById('regMobile').value,
+                    country: document.getElementById('regCountry').value,
+                    withdrawPin: document.getElementById('regPin').value,
+                    telegram: document.getElementById('regTelegram').value,
+                    balance: 0, todayEarnings: 0, yesterdayEarnings: 0,
+                    todayOtp: 0, totalOtps: 0, approved: false,
+                    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+                    loginMethod: 'email'
+                });
+            })
+            .then(() => {
+                showVerificationModal(document.getElementById('regEmail').value);
+                startTimer();
+            })
+            .catch((error) => alert('Registration Error: ' + error.message));
         });
 
         function showVerificationModal(email) {
@@ -533,14 +493,14 @@
 
         function startTimer() {
             let timeLeft = 600;
-            const timerElement = document.getElementById('timer');
             countdownInterval = setInterval(() => {
                 const minutes = Math.floor(timeLeft / 60);
                 const seconds = timeLeft % 60;
-                timerElement.textContent = `Expires in: ${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                document.getElementById('timer').textContent = 
+                    `Expires in: ${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
                 if (timeLeft <= 0) {
                     clearInterval(countdownInterval);
-                    timerElement.textContent = 'Code expired!';
+                    document.getElementById('timer').textContent = 'Code expired!';
                 }
                 timeLeft--;
             }, 1000);
@@ -550,12 +510,11 @@
             const btn = document.getElementById('resendBtn');
             let cooldown = 60;
             btn.disabled = true;
-            btn.textContent = `Resend Code (${cooldown}s)`;
-            const cooldownInterval = setInterval(() => {
+            const interval = setInterval(() => {
                 cooldown--;
                 btn.textContent = `Resend Code (${cooldown}s)`;
                 if (cooldown <= 0) {
-                    clearInterval(cooldownInterval);
+                    clearInterval(interval);
                     btn.disabled = false;
                     btn.textContent = 'Resend Code';
                     verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
@@ -566,13 +525,12 @@
         }
 
         function verifyCode() {
-            const inputCode = document.getElementById('verificationInput').value;
-            if (inputCode === verificationCode) {
+            if (document.getElementById('verificationInput').value === verificationCode) {
                 clearInterval(countdownInterval);
                 document.getElementById('verificationModal').classList.add('hidden');
                 document.getElementById('successMessage').classList.remove('hidden');
             } else {
-                alert('Invalid code! Please try again.');
+                alert('Invalid code!');
             }
         }
 
@@ -639,8 +597,7 @@
         }
 
         function showSection(section) {
-            const sections = ['dashboard', 'getNumber', 'console', 'topUser', 'withdraw', 'profile', 'channel', 'api', 'admin'];
-            sections.forEach(s => {
+            ['dashboard', 'getNumber', 'console', 'withdraw', 'profile', 'api', 'admin'].forEach(s => {
                 const el = document.getElementById(s + 'Section');
                 if (el) el.classList.add('hidden');
             });
@@ -649,74 +606,49 @@
         }
 
         // ==========================================
-        // 4. ZENEX API FUNCTIONS (V4.0 - FIXED)
+        // 4. ZENEX API FUNCTIONS
         // ==========================================
-        
-        // ✅ সঠিক Header: mapikey (not mapike!)
-        const ZENEX_HEADERS = {
-            'mapikey': ZENEX_API_KEY,  // ✅ Documentation অনুযায়ী সঠিক
-            'Content-Type': 'application/json'
-        };
-
-        // Provision Number (GET NUMBER)
         async function getNumber() {
             const range = document.getElementById('numberRange').value.trim();
-            const isNational = document.getElementById('nationalFormat').checked;
-            const removePlus = document.getElementById('removePlus').checked;
-            
-            if (!range) {
-                alert('Please enter a number range (e.g., 22465XXX)');
-                return;
-            }
+            if (!range) { alert('Please enter a range'); return; }
 
             const btn = event.target;
             btn.disabled = true;
             btn.innerHTML = '⏳ Processing...';
 
             try {
-                console.log(' Provisioning number:', range);
-                
                 const response = await fetch(`${ZENEX_API_BASE}/v1/getnum`, {
                     method: 'POST',
                     headers: ZENEX_HEADERS,
                     body: JSON.stringify({
                         range: range,
-                        is_national: isNational,
-                        remove_plus: removePlus
+                        is_national: document.getElementById('nationalFormat').checked,
+                        remove_plus: document.getElementById('removePlus').checked
                     })
                 });
 
-                console.log('Response status:', response.status);
-                console.log('Content-Type:', response.headers.get('content-type'));
-
-                // চেক করুন response JSON কিনা
                 const contentType = response.headers.get('content-type');
                 if (!contentType || !contentType.includes('application/json')) {
                     const text = await response.text();
-                    console.error('Received HTML instead of JSON:', text.substring(0, 200));
-                    throw new Error(`API returned HTML instead of JSON. Status: ${response.status}\nThis means the endpoint is wrong or API key is invalid.`);
+                    throw new Error(`API returned HTML instead of JSON. Status: ${response.status}`);
                 }
 
                 const data = await response.json();
-                console.log('API Response:', data);
                 
                 if (data.meta && data.meta.code === 200) {
-                    const numberData = data.data;
-                    provisionedNumbers.push(numberData);
+                    provisionedNumbers.push(data.data);
                     updateNumberStats();
-                    addToFeed(numberData);
-                    
-                    alert(`✅ Number Provisioned Successfully!\n\n📱 Number: ${numberData.number}\n🌍 Country: ${numberData.country}\n📡 Operator: ${numberData.operator}\n📋 Status: ${numberData.status}`);
+                    addToFeed(data.data);
+                    alert(`✅ Success!\nNumber: ${data.data.number}`);
                     document.getElementById('numberRange').value = '';
                 } else {
-                    throw new Error(data.message || 'Failed to provision number');
+                    throw new Error(data.message || 'Failed');
                 }
-                
             } catch (error) {
-                console.error('Provision Error:', error);
-                alert(` Error: ${error.message}\n\nCheck browser console for details.`);
-                const failedEl = document.getElementById('failedNumbers');
-                failedEl.textContent = parseInt(failedEl.textContent) + 1;
+                alert(`❌ Error: ${error.message}\n\nCheck browser console for details.`);
+                console.error('Get Number Error:', error);
+                document.getElementById('failedNumbers').textContent = 
+                    parseInt(document.getElementById('failedNumbers').textContent) + 1;
             } finally {
                 btn.disabled = false;
                 btn.innerHTML = '📱 GET NUMBER';
@@ -726,128 +658,64 @@
         function updateNumberStats() {
             const total = provisionedNumbers.length;
             const success = provisionedNumbers.filter(n => n.status === 'success').length;
-            const wait = provisionedNumbers.filter(n => n.status === 'pending' || n.status === 'wait').length;
-            const failed = total - success - wait;
-            
             document.getElementById('totalNumbers').textContent = total;
             document.getElementById('successNumbers').textContent = success;
-            document.getElementById('waitNumbers').textContent = wait;
-            document.getElementById('failedNumbers').textContent = failed;
-            
+            document.getElementById('failedNumbers').textContent = total - success;
             const rate = total > 0 ? (success / total * 100).toFixed(1) : 0;
-            document.getElementById('successRateText').textContent = rate + '%';
-            document.getElementById('successRateBar').style.width = rate + '%';
+            document.getElementById('successRateText')?.textContent = rate + '%';
         }
 
         function addToFeed(numberData) {
             const feed = document.getElementById('numberFeed');
-            const feedItem = document.createElement('div');
-            feedItem.className = 'feed-item';
-            feedItem.innerHTML = `
+            const item = document.createElement('div');
+            item.className = 'feed-item';
+            item.innerHTML = `
                 <div style="color: #10b981; font-weight: bold;">✅ ${numberData.number}</div>
-                <div style="color: #94a3b8; font-size: 12px; margin-top: 5px;">
-                    ${numberData.country} | ${numberData.operator} | ${numberData.status}
-                </div>
+                <div style="color: #94a3b8; font-size: 12px;">${numberData.country} | ${numberData.operator}</div>
             `;
-            feed.insertBefore(feedItem, feed.firstChild);
+            feed.insertBefore(item, feed.firstChild);
         }
 
-        // Fetch OTPs (Live Console)
         async function fetchZenexData() {
             const output = document.getElementById('consoleOutput');
             const statusBadge = document.getElementById('consoleStatus');
             
             try {
-                console.log('📡 Fetching OTPs from Zenex...');
-                
                 const response = await fetch(`${ZENEX_API_BASE}/v1/numsuccess/info`, {
                     method: 'GET',
                     headers: ZENEX_HEADERS
                 });
 
-                console.log('Response status:', response.status);
-                console.log('Content-Type:', response.headers.get('content-type'));
-
                 const contentType = response.headers.get('content-type');
                 if (!contentType || !contentType.includes('application/json')) {
-                    const text = await response.text();
-                    console.error('Received HTML:', text.substring(0, 200));
-                    throw new Error(`API returned HTML instead of JSON. Status: ${response.status}\nEndpoint may not exist.`);
-                }
-
-                if (response.status === 404) {
-                    output.innerHTML = `<div style="color: #ef4444;">❌ Endpoint Not Found (404)</div>
-<div style="color: #94a3b8; margin-top: 10px;">
-️ The endpoint /v1/numsuccess/info does not exist.<br>
-Please check Zenex API documentation.
-</div>`;
-                    statusBadge.textContent = 'ERROR';
-                    statusBadge.className = 'error-badge';
-                    return;
-                }
-
-                if (response.status === 401 || response.status === 403) {
-                    output.innerHTML = `<div style="color: #ef4444;">❌ Authentication Failed (${response.status})</div>
-<div style="color: #94a3b8; margin-top: 10px;">
-⚠️ API Key invalid or expired.<br>
-Key: ${ZENEX_API_KEY.substring(0, 15)}...
-</div>`;
-                    statusBadge.textContent = 'ERROR';
-                    statusBadge.className = 'error-badge';
-                    return;
-                }
-
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    throw new Error(`API returned HTML. Status: ${response.status}`);
                 }
 
                 const result = await response.json();
-                console.log('OTP Response:', result);
                 
                 if (result.meta && result.meta.code === 200) {
                     const otps = result.data.otps || [];
                     
                     if (otps.length === 0) {
                         output.innerHTML = `<div style="color: #f59e0b;">⏳ Waiting for OTPs...</div>
-<div style="color: #94a3b8; margin-top: 10px;">
-📡 Polling every 5 seconds.<br>
-🔍 No OTPs received yet.<br>
-💡 Provision a number first.
-</div>`;
+<div style="color: #94a3b8; margin-top: 10px;">📡 Polling every 5 seconds.</div>`;
                     } else {
-                        let otpHTML = `<div style="color: #10b981; margin-bottom: 15px; font-weight: bold;">✅ ${otps.length} OTP(s) Received</div>`;
-                        
-                        otps.forEach((otp) => {
-                            otpHTML += `
-<div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); padding: 15px; border-radius: 8px; margin-bottom: 10px;">
-    <div style="color: #3b82f6; font-weight: bold; margin-bottom: 5px;"> ${otp.number} (${otp.country})</div>
-    <div style="color: #e2e8f0; font-family: monospace; font-size: 18px; margin: 10px 0; padding: 10px; background: rgba(0,0,0,0.3); border-radius: 6px; word-break: break-all;">${otp.otp}</div>
-    <div style="color: #94a3b8; font-size: 12px;">
-        <span>📡 ${otp.operator}</span> | 
-        <span>🕐 ${otp.created_at}</span> |
-        <span>ID: ${otp.nid}</span>
-    </div>
-</div>`;
+                        let html = `<div style="color: #10b981; margin-bottom: 15px; font-weight: bold;">✅ ${otps.length} OTP(s)</div>`;
+                        otps.forEach(otp => {
+                            html += `<div style="background: rgba(16,185,129,0.1); padding: 15px; border-radius: 8px; margin: 10px 0;">
+                                <div style="color: #3b82f6; font-weight: bold;">📱 ${otp.number}</div>
+                                <div style="color: #e2e8f0; font-size: 18px; margin: 10px 0; font-family: monospace;">${otp.otp}</div>
+                            </div>`;
                         });
-                        
-                        output.innerHTML = otpHTML;
+                        output.innerHTML = html;
                     }
-                    
                     statusBadge.textContent = 'LIVE';
                     statusBadge.className = 'success-badge';
                 } else {
-                    output.innerHTML = `<div style="color: #ef4444;">❌ API Error: ${result.message || 'Unknown error'}</div>`;
-                    statusBadge.textContent = 'ERROR';
-                    statusBadge.className = 'error-badge';
+                    throw new Error(result.message || 'API Error');
                 }
-                
             } catch (error) {
-                console.error('Fetch Error:', error);
-                output.innerHTML = `<div style="color: #ef4444;">❌ Connection Error</div>
-<div style="color: #94a3b8; margin-top: 10px;">
-${error.message}<br>
-🔧 Check console for details.
-</div>`;
+                output.innerHTML = `<div style="color: #ef4444;">❌ ${error.message}</div>`;
                 statusBadge.textContent = 'ERROR';
                 statusBadge.className = 'error-badge';
             }
@@ -870,13 +738,10 @@ ${error.message}<br>
         }
 
         function toggleAutoSync() {
-            if (document.getElementById('autoSync').checked) startAutoSync();
-            else stopAutoSync();
+            document.getElementById('autoSync').checked ? startAutoSync() : stopAutoSync();
         }
 
-        // ==========================================
-        // 5. INITIALIZATION
-        // ==========================================
+        // Initialize
         auth.onAuthStateChanged((user) => {
             if (user) {
                 currentUser = user;
@@ -887,11 +752,7 @@ ${error.message}<br>
         document.addEventListener('DOMContentLoaded', () => {
             console.log('✅ MH SMS PANEL Loaded');
             console.log('✅ Firebase Initialized');
-            console.log('✅ Zenex API V4.0 Configured');
-            console.log(' Base URL:', ZENEX_API_BASE);
-            console.log('📡 Header: mapikey =', ZENEX_API_KEY.substring(0, 15) + '...');
-            console.log('📡 Provision Endpoint:', ZENEX_API_BASE + '/v1/getnum');
-            console.log('📡 OTP Endpoint:', ZENEX_API_BASE + '/v1/numsuccess/info');
+            console.log('✅ Zenex API:', ZENEX_API_BASE);
         });
     </script>
 </body>
