@@ -137,7 +137,18 @@
         .resend-btn:disabled { opacity: 0.5; cursor: not-allowed; }
         .alert { padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; text-align: center; }
         .alert-success { background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); color: #6ee7b7; }
+        .alert-error { background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #fca5a5; }
         .gmail-note { font-size: 12px; color: #94a3b8; margin-top: 10px; text-align: center; }
+        .number-section { margin-bottom: 30px; }
+        .feed-section { margin-top: 20px; }
+        .feed-item {
+            background: rgba(16, 185, 129, 0.05);
+            border-left: 3px solid #10b981;
+            padding: 10px 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
@@ -303,8 +314,63 @@
                 </div>
             </div>
 
+            <!-- Get Number Section -->
+            <div id="getNumberSection" class="hidden">
+                <div class="console-container">
+                    <h2 style="margin-bottom: 20px;">📱 Get Virtual Number</h2>
+                    
+                    <div class="stats-grid" style="margin-bottom: 20px;">
+                        <div class="stat-card">
+                            <div class="stat-label">TOTAL</div>
+                            <div class="stat-value" id="totalNumbers">1</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">SUCCESS</div>
+                            <div class="stat-value" style="color: #10b981" id="successNumbers">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">WAIT</div>
+                            <div class="stat-value" style="color: #f59e0b" id="waitNumbers">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">FAILED</div>
+                            <div class="stat-value" style="color: #ef4444" id="failedNumbers">1</div>
+                        </div>
+                    </div>
+
+                    <div style="margin-bottom: 20px;">
+                        <div class="stat-label">SUCCESS RATE</div>
+                        <div style="background: rgba(148, 163, 184, 0.2); height: 8px; border-radius: 4px; margin: 10px 0;">
+                            <div id="successRateBar" style="background: #10b981; height: 100%; border-radius: 4px; width: 0%; transition: width 0.3s;"></div>
+                        </div>
+                        <div style="text-align: right; color: #10b981; font-weight: bold;" id="successRateText">0.0%</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>TARGET RANGE / CODE</label>
+                        <input type="text" id="numberRange" placeholder="22465XXX" value="22465XXX">
+                    </div>
+
+                    <div class="checkbox-group" style="margin-bottom: 20px;">
+                        <input type="checkbox" id="nationalFormat">
+                        <label for="nationalFormat">National</label>
+                        <input type="checkbox" id="removePlus" style="margin-left: 15px;">
+                        <label for="removePlus">No (+)</label>
+                    </div>
+
+                    <button class="btn btn-primary" onclick="getNumber()" style="margin-bottom: 20px;">
+                        📱 GET NUMBER
+                    </button>
+
+                    <div class="feed-section">
+                        <div class="stat-label" style="margin-bottom: 10px;"> FEED</div>
+                        <div id="numberFeed"></div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Other Sections -->
-            <div id="getNumberSection" class="hidden"><div class="console-container"><h2>Get Number</h2><p>Feature coming soon...</p></div></div>
+            <div id="consoleSection" class="hidden"><div class="console-container"><h2>Live Console</h2><p>Check Dashboard for live console.</p></div></div>
             <div id="topUserSection" class="hidden"><div class="console-container"><h2>Top Users</h2><p>Users ranked by total OTP activity.</p></div></div>
             <div id="withdrawSection" class="hidden">
                 <div class="console-container">
@@ -316,7 +382,7 @@
                     </div>
                     <div class="form-group">
                         <label>Amount (MIN: ৳ 50)</label>
-                        <input type="number" placeholder="">
+                        <input type="number" placeholder="৳">
                     </div>
                     <div class="form-group">
                         <label>Security PIN</label>
@@ -378,17 +444,17 @@
         const db = firebase.firestore();
 
         // ==========================================
-        // 2. ZENEX API CONFIGURATION (FIXED)
+        // 2. ZENEX API CONFIGURATION (V4.0)
         // ==========================================
         const ZENEX_API_BASE = 'https://api.zenexnetwork.com';
         const ZENEX_API_KEY = 'ZNX_5N3NLP36B6TNR6OGHKOX2JML';
-        const ZENEX_ENDPOINT = '/v1/numsuccess/info';
         
         let currentUser = null;
         let verificationCode = '';
         let countdownInterval = null;
         let autoSyncInterval = null;
         let userData = null;
+        let provisionedNumbers = [];
 
         // ==========================================
         // 3. AUTH FUNCTIONS
@@ -583,27 +649,136 @@
         }
 
         // ==========================================
-        // 4. ZENEX API FUNCTIONS (FIXED)
+        // 4. ZENEX API FUNCTIONS (V4.0 - FIXED)
         // ==========================================
+        
+        // Provision Number (GET NUMBER)
+        async function getNumber() {
+            const range = document.getElementById('numberRange').value.trim();
+            const isNational = document.getElementById('nationalFormat').checked;
+            const removePlus = document.getElementById('removePlus').checked;
+            
+            if (!range) {
+                alert('Please enter a number range (e.g., 22465XXX)');
+                return;
+            }
+
+            const btn = event.target;
+            btn.disabled = true;
+            btn.innerHTML = '⏳ Processing...';
+
+            try {
+                // ✅ সঠিক Zenex API call - V4.0 Documentation অনুযায়ী
+                const response = await fetch(`${ZENEX_API_BASE}/v1/getnum`, {
+                    method: 'POST',
+                    headers: {
+                        'mapikey': ZENEX_API_KEY,  // ✅ সঠিক Authentication Header
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        range: range,
+                        is_national: isNational,
+                        remove_plus: removePlus
+                    })
+                });
+
+                // চেক করুন response JSON কিনা
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    const text = await response.text();
+                    throw new Error(`API returned HTML instead of JSON. Status: ${response.status}\nResponse: ${text.substring(0, 100)}...`);
+                }
+
+                const data = await response.json();
+                
+                if (data.meta && data.meta.code === 200) {
+                    // Success
+                    const numberData = data.data;
+                    provisionedNumbers.push(numberData);
+                    
+                    // Update stats
+                    updateNumberStats();
+                    
+                    // Add to feed
+                    addToFeed(numberData);
+                    
+                    alert(`✅ Number Provisioned Successfully!\n\n📱 Number: ${numberData.number}\n🌍 Country: ${numberData.country}\n📡 Operator: ${numberData.operator}\n📋 Status: ${numberData.status}`);
+                    
+                    // Clear input
+                    document.getElementById('numberRange').value = '';
+                } else {
+                    throw new Error(data.message || 'Failed to provision number');
+                }
+                
+            } catch (error) {
+                console.error('Provision Error:', error);
+                alert(`❌ Error: ${error.message}\n\nPossible causes:\n- Invalid API Key\n- Wrong endpoint\n- Network issue\n- Insufficient balance\n\nCheck console for details.`);
+                
+                // Update failed count
+                const failedEl = document.getElementById('failedNumbers');
+                failedEl.textContent = parseInt(failedEl.textContent) + 1;
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '📱 GET NUMBER';
+            }
+        }
+
+        function updateNumberStats() {
+            const total = provisionedNumbers.length;
+            const success = provisionedNumbers.filter(n => n.status === 'success').length;
+            const wait = provisionedNumbers.filter(n => n.status === 'pending' || n.status === 'wait').length;
+            const failed = total - success - wait;
+            
+            document.getElementById('totalNumbers').textContent = total;
+            document.getElementById('successNumbers').textContent = success;
+            document.getElementById('waitNumbers').textContent = wait;
+            document.getElementById('failedNumbers').textContent = failed;
+            
+            const rate = total > 0 ? (success / total * 100).toFixed(1) : 0;
+            document.getElementById('successRateText').textContent = rate + '%';
+            document.getElementById('successRateBar').style.width = rate + '%';
+        }
+
+        function addToFeed(numberData) {
+            const feed = document.getElementById('numberFeed');
+            const feedItem = document.createElement('div');
+            feedItem.className = 'feed-item';
+            feedItem.innerHTML = `
+                <div style="color: #10b981; font-weight: bold;">✅ ${numberData.number}</div>
+                <div style="color: #94a3b8; font-size: 12px; margin-top: 5px;">
+                    ${numberData.country} | ${numberData.operator} | ${numberData.status}
+                </div>
+            `;
+            feed.insertBefore(feedItem, feed.firstChild);
+        }
+
+        // Fetch OTPs (Live Console)
         async function fetchZenexData() {
             const output = document.getElementById('consoleOutput');
             const statusBadge = document.getElementById('consoleStatus');
             
             try {
-                // ✅ সঠিক Zenex API call - Documentation অনুযায়ী
-                const response = await fetch(`${ZENEX_API_BASE}${ZENEX_ENDPOINT}`, {
+                // ✅ সঠিক Zenex API call - V4.0 Documentation অনুযায়ী
+                const response = await fetch(`${ZENEX_API_BASE}/v1/numsuccess/info`, {
                     method: 'GET',
                     headers: {
-                        'mapike': ZENEX_API_KEY,  // ✅ সঠিক Authentication Header
+                        'mapikey': ZENEX_API_KEY,  // ✅ সঠিক Authentication Header
                         'Content-Type': 'application/json'
                     }
                 });
+
+                // চেক করুন response JSON কিনা
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    const text = await response.text();
+                    throw new Error(`API returned HTML instead of JSON. Status: ${response.status}`);
+                }
 
                 if (response.status === 404) {
                     output.innerHTML = `<div style="color: #ef4444;">❌ API Endpoint Not Found (404)</div>
 <div style="color: #94a3b8; margin-top: 10px;">
 ⚠️ Zenex API URL ভুল।<br>
-ব্যবহার করুন: ${ZENEX_API_BASE}${ZENEX_ENDPOINT}
+ব্যবহার করুন: ${ZENEX_API_BASE}/v1/numsuccess/info
 </div>`;
                     statusBadge.textContent = 'ERROR';
                     statusBadge.className = 'error-badge';
@@ -613,7 +788,7 @@
                 if (response.status === 401 || response.status === 403) {
                     output.innerHTML = `<div style="color: #ef4444;">❌ Authentication Failed (${response.status})</div>
 <div style="color: #94a3b8; margin-top: 10px;">
-️ API Key অবৈধ বা expired।<br>
+⚠️ API Key অবৈধ বা expired।<br>
 Key: ${ZENEX_API_KEY.substring(0, 15)}...
 </div>`;
                     statusBadge.textContent = 'ERROR';
@@ -644,9 +819,9 @@ Key: ${ZENEX_API_KEY.substring(0, 15)}...
                             otpHTML += `
 <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); padding: 15px; border-radius: 8px; margin-bottom: 10px;">
     <div style="color: #3b82f6; font-weight: bold; margin-bottom: 5px;">📱 ${otp.number} (${otp.country})</div>
-    <div style="color: #e2e8f0; font-family: monospace; font-size: 18px; margin: 10px 0; padding: 10px; background: rgba(0,0,0,0.3); border-radius: 6px;">${otp.otp}</div>
+    <div style="color: #e2e8f0; font-family: monospace; font-size: 18px; margin: 10px 0; padding: 10px; background: rgba(0,0,0,0.3); border-radius: 6px; word-break: break-all;">${otp.otp}</div>
     <div style="color: #94a3b8; font-size: 12px;">
-        <span>📡 ${otp.operator}</span> | 
+        <span> ${otp.operator}</span> | 
         <span>🕐 ${otp.created_at}</span> |
         <span>ID: ${otp.nid}</span>
     </div>
@@ -709,8 +884,10 @@ ${error.message}<br>
         document.addEventListener('DOMContentLoaded', () => {
             console.log('✅ MH SMS PANEL Loaded');
             console.log('✅ Firebase Initialized');
-            console.log('✅ Zenex API Configured:', ZENEX_API_BASE + ZENEX_ENDPOINT);
+            console.log('✅ Zenex API V4.0 Configured:', ZENEX_API_BASE);
+            console.log(' Provision Endpoint:', ZENEX_API_BASE + '/v1/getnum');
+            console.log('📨 OTP Endpoint:', ZENEX_API_BASE + '/v1/numsuccess/info');
         });
     </script>
 </body>
-    </html>
+</html>
