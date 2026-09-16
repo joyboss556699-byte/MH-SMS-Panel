@@ -184,7 +184,7 @@
                 <button type="button" class="btn btn-google" onclick="googleLogin()">
                     G Continue with Google
                 </button>
-                <div class="gmail-note">📧 Gmail accounts only • @gmail.com</div>
+                <div class="gmail-note"> Gmail accounts only • @gmail.com</div>
             </form>
 
             <!-- Register Form -->
@@ -287,7 +287,7 @@
                     </div>
                     <div class="stat-card">
                         <div class="stat-label">YESTERDAY</div>
-                        <div class="stat-value" id="yesterdayEarnings">৳ 0.00</div>
+                        <div class="stat-value" id="yesterdayEarnings"> 0.00</div>
                     </div>
                     <div class="stat-card">
                         <div class="stat-label">TOTAL OTPs</div>
@@ -304,7 +304,7 @@
                         </div>
                     </div>
                     <div class="console-controls">
-                        <button class="btn btn-primary" style="width: auto; padding: 10px 20px;" onclick="refreshConsole()"> Refresh</button>
+                        <button class="btn btn-primary" style="width: auto; padding: 10px 20px;" onclick="refreshConsole()">🔄 Refresh</button>
                         <div class="checkbox-group">
                             <input type="checkbox" id="autoSync" checked onchange="toggleAutoSync()">
                             <label for="autoSync">Auto Sync (5s)</label>
@@ -322,7 +322,7 @@
                     <div class="stats-grid" style="margin-bottom: 20px;">
                         <div class="stat-card">
                             <div class="stat-label">TOTAL</div>
-                            <div class="stat-value" id="totalNumbers">1</div>
+                            <div class="stat-value" id="totalNumbers">0</div>
                         </div>
                         <div class="stat-card">
                             <div class="stat-label">SUCCESS</div>
@@ -334,7 +334,7 @@
                         </div>
                         <div class="stat-card">
                             <div class="stat-label">FAILED</div>
-                            <div class="stat-value" style="color: #ef4444" id="failedNumbers">1</div>
+                            <div class="stat-value" style="color: #ef4444" id="failedNumbers">0</div>
                         </div>
                     </div>
 
@@ -359,11 +359,11 @@
                     </div>
 
                     <button class="btn btn-primary" onclick="getNumber()" style="margin-bottom: 20px;">
-                        📱 GET NUMBER
+                         GET NUMBER
                     </button>
 
                     <div class="feed-section">
-                        <div class="stat-label" style="margin-bottom: 10px;"> FEED</div>
+                        <div class="stat-label" style="margin-bottom: 10px;">🟢 FEED</div>
                         <div id="numberFeed"></div>
                     </div>
                 </div>
@@ -444,7 +444,7 @@
         const db = firebase.firestore();
 
         // ==========================================
-        // 2. ZENEX API CONFIGURATION (V4.0)
+        // 2. ZENEX API CONFIGURATION (V4.0 - FIXED)
         // ==========================================
         const ZENEX_API_BASE = 'https://api.zenexnetwork.com';
         const ZENEX_API_KEY = 'ZNX_5N3NLP36B6TNR6OGHKOX2JML';
@@ -652,6 +652,12 @@
         // 4. ZENEX API FUNCTIONS (V4.0 - FIXED)
         // ==========================================
         
+        // ✅ সঠিক Header: mapikey (not mapike!)
+        const ZENEX_HEADERS = {
+            'mapikey': ZENEX_API_KEY,  // ✅ Documentation অনুযায়ী সঠিক
+            'Content-Type': 'application/json'
+        };
+
         // Provision Number (GET NUMBER)
         async function getNumber() {
             const range = document.getElementById('numberRange').value.trim();
@@ -668,13 +674,11 @@
             btn.innerHTML = '⏳ Processing...';
 
             try {
-                // ✅ সঠিক Zenex API call - V4.0 Documentation অনুযায়ী
+                console.log(' Provisioning number:', range);
+                
                 const response = await fetch(`${ZENEX_API_BASE}/v1/getnum`, {
                     method: 'POST',
-                    headers: {
-                        'mapikey': ZENEX_API_KEY,  // ✅ সঠিক Authentication Header
-                        'Content-Type': 'application/json'
-                    },
+                    headers: ZENEX_HEADERS,
                     body: JSON.stringify({
                         range: range,
                         is_national: isNational,
@@ -682,29 +686,27 @@
                     })
                 });
 
+                console.log('Response status:', response.status);
+                console.log('Content-Type:', response.headers.get('content-type'));
+
                 // চেক করুন response JSON কিনা
                 const contentType = response.headers.get('content-type');
                 if (!contentType || !contentType.includes('application/json')) {
                     const text = await response.text();
-                    throw new Error(`API returned HTML instead of JSON. Status: ${response.status}\nResponse: ${text.substring(0, 100)}...`);
+                    console.error('Received HTML instead of JSON:', text.substring(0, 200));
+                    throw new Error(`API returned HTML instead of JSON. Status: ${response.status}\nThis means the endpoint is wrong or API key is invalid.`);
                 }
 
                 const data = await response.json();
+                console.log('API Response:', data);
                 
                 if (data.meta && data.meta.code === 200) {
-                    // Success
                     const numberData = data.data;
                     provisionedNumbers.push(numberData);
-                    
-                    // Update stats
                     updateNumberStats();
-                    
-                    // Add to feed
                     addToFeed(numberData);
                     
                     alert(`✅ Number Provisioned Successfully!\n\n📱 Number: ${numberData.number}\n🌍 Country: ${numberData.country}\n📡 Operator: ${numberData.operator}\n📋 Status: ${numberData.status}`);
-                    
-                    // Clear input
                     document.getElementById('numberRange').value = '';
                 } else {
                     throw new Error(data.message || 'Failed to provision number');
@@ -712,9 +714,7 @@
                 
             } catch (error) {
                 console.error('Provision Error:', error);
-                alert(`❌ Error: ${error.message}\n\nPossible causes:\n- Invalid API Key\n- Wrong endpoint\n- Network issue\n- Insufficient balance\n\nCheck console for details.`);
-                
-                // Update failed count
+                alert(` Error: ${error.message}\n\nCheck browser console for details.`);
                 const failedEl = document.getElementById('failedNumbers');
                 failedEl.textContent = parseInt(failedEl.textContent) + 1;
             } finally {
@@ -758,27 +758,28 @@
             const statusBadge = document.getElementById('consoleStatus');
             
             try {
-                // ✅ সঠিক Zenex API call - V4.0 Documentation অনুযায়ী
+                console.log('📡 Fetching OTPs from Zenex...');
+                
                 const response = await fetch(`${ZENEX_API_BASE}/v1/numsuccess/info`, {
                     method: 'GET',
-                    headers: {
-                        'mapikey': ZENEX_API_KEY,  // ✅ সঠিক Authentication Header
-                        'Content-Type': 'application/json'
-                    }
+                    headers: ZENEX_HEADERS
                 });
 
-                // চেক করুন response JSON কিনা
+                console.log('Response status:', response.status);
+                console.log('Content-Type:', response.headers.get('content-type'));
+
                 const contentType = response.headers.get('content-type');
                 if (!contentType || !contentType.includes('application/json')) {
                     const text = await response.text();
-                    throw new Error(`API returned HTML instead of JSON. Status: ${response.status}`);
+                    console.error('Received HTML:', text.substring(0, 200));
+                    throw new Error(`API returned HTML instead of JSON. Status: ${response.status}\nEndpoint may not exist.`);
                 }
 
                 if (response.status === 404) {
-                    output.innerHTML = `<div style="color: #ef4444;">❌ API Endpoint Not Found (404)</div>
+                    output.innerHTML = `<div style="color: #ef4444;">❌ Endpoint Not Found (404)</div>
 <div style="color: #94a3b8; margin-top: 10px;">
-⚠️ Zenex API URL ভুল।<br>
-ব্যবহার করুন: ${ZENEX_API_BASE}/v1/numsuccess/info
+️ The endpoint /v1/numsuccess/info does not exist.<br>
+Please check Zenex API documentation.
 </div>`;
                     statusBadge.textContent = 'ERROR';
                     statusBadge.className = 'error-badge';
@@ -788,7 +789,7 @@
                 if (response.status === 401 || response.status === 403) {
                     output.innerHTML = `<div style="color: #ef4444;">❌ Authentication Failed (${response.status})</div>
 <div style="color: #94a3b8; margin-top: 10px;">
-⚠️ API Key অবৈধ বা expired।<br>
+⚠️ API Key invalid or expired.<br>
 Key: ${ZENEX_API_KEY.substring(0, 15)}...
 </div>`;
                     statusBadge.textContent = 'ERROR';
@@ -801,6 +802,7 @@ Key: ${ZENEX_API_KEY.substring(0, 15)}...
                 }
 
                 const result = await response.json();
+                console.log('OTP Response:', result);
                 
                 if (result.meta && result.meta.code === 200) {
                     const otps = result.data.otps || [];
@@ -809,19 +811,19 @@ Key: ${ZENEX_API_KEY.substring(0, 15)}...
                         output.innerHTML = `<div style="color: #f59e0b;">⏳ Waiting for OTPs...</div>
 <div style="color: #94a3b8; margin-top: 10px;">
 📡 Polling every 5 seconds.<br>
-🔍 No OTPs received yet for your numbers.<br>
-💡 Provision a number first to start receiving OTPs.
+🔍 No OTPs received yet.<br>
+💡 Provision a number first.
 </div>`;
                     } else {
                         let otpHTML = `<div style="color: #10b981; margin-bottom: 15px; font-weight: bold;">✅ ${otps.length} OTP(s) Received</div>`;
                         
-                        otps.forEach((otp, index) => {
+                        otps.forEach((otp) => {
                             otpHTML += `
 <div style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); padding: 15px; border-radius: 8px; margin-bottom: 10px;">
-    <div style="color: #3b82f6; font-weight: bold; margin-bottom: 5px;">📱 ${otp.number} (${otp.country})</div>
+    <div style="color: #3b82f6; font-weight: bold; margin-bottom: 5px;"> ${otp.number} (${otp.country})</div>
     <div style="color: #e2e8f0; font-family: monospace; font-size: 18px; margin: 10px 0; padding: 10px; background: rgba(0,0,0,0.3); border-radius: 6px; word-break: break-all;">${otp.otp}</div>
     <div style="color: #94a3b8; font-size: 12px;">
-        <span> ${otp.operator}</span> | 
+        <span>📡 ${otp.operator}</span> | 
         <span>🕐 ${otp.created_at}</span> |
         <span>ID: ${otp.nid}</span>
     </div>
@@ -840,10 +842,11 @@ Key: ${ZENEX_API_KEY.substring(0, 15)}...
                 }
                 
             } catch (error) {
+                console.error('Fetch Error:', error);
                 output.innerHTML = `<div style="color: #ef4444;">❌ Connection Error</div>
 <div style="color: #94a3b8; margin-top: 10px;">
 ${error.message}<br>
-🔧 Check your internet connection and API settings.
+🔧 Check console for details.
 </div>`;
                 statusBadge.textContent = 'ERROR';
                 statusBadge.className = 'error-badge';
@@ -884,9 +887,11 @@ ${error.message}<br>
         document.addEventListener('DOMContentLoaded', () => {
             console.log('✅ MH SMS PANEL Loaded');
             console.log('✅ Firebase Initialized');
-            console.log('✅ Zenex API V4.0 Configured:', ZENEX_API_BASE);
-            console.log(' Provision Endpoint:', ZENEX_API_BASE + '/v1/getnum');
-            console.log('📨 OTP Endpoint:', ZENEX_API_BASE + '/v1/numsuccess/info');
+            console.log('✅ Zenex API V4.0 Configured');
+            console.log(' Base URL:', ZENEX_API_BASE);
+            console.log('📡 Header: mapikey =', ZENEX_API_KEY.substring(0, 15) + '...');
+            console.log('📡 Provision Endpoint:', ZENEX_API_BASE + '/v1/getnum');
+            console.log('📡 OTP Endpoint:', ZENEX_API_BASE + '/v1/numsuccess/info');
         });
     </script>
 </body>
