@@ -251,7 +251,7 @@
         <!-- Dashboard -->
         <div class="dashboard" id="dashboard">
             <div class="top-bar">
-                <div class="balance" id="userBalance">৳ 0.00</div>
+                <div class="balance" id="userBalance"> 0.00</div>
                 <div class="user-avatar" id="userAvatar">U</div>
             </div>
 
@@ -296,12 +296,12 @@
                 <div class="console-container">
                     <div class="console-header">
                         <div class="console-title">
-                            🌐 Live Console (Zenex)
+                             Live Console (Zenex)
                             <span id="consoleStatus" class="error-badge">IDLE</span>
                         </div>
                     </div>
                     <div class="console-controls">
-                        <button class="btn btn-primary" style="width: auto; padding: 10px 20px;" onclick="refreshConsole()"> Refresh</button>
+                        <button class="btn btn-primary" style="width: auto; padding: 10px 20px;" onclick="refreshConsole()">🔄 Refresh</button>
                         <div class="checkbox-group">
                             <input type="checkbox" id="autoSync" checked onchange="toggleAutoSync()">
                             <label for="autoSync">Auto Sync (5s)</label>
@@ -374,7 +374,7 @@
             </div>
             <div id="adminSection" class="hidden">
                 <div class="console-container">
-                    <h2>️ Admin Panel</h2>
+                    <h2>🛡️ Admin Panel</h2>
                     <p>Website management — users, balance, OTP rate, withdrawals and statistics.</p>
                 </div>
             </div>
@@ -398,16 +398,6 @@
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.firestore();
-
-        // ==========================================
-        // 2. ZENEX API CONFIGURATION (V4.0)
-        // ==========================================
-        const ZENEX_API_BASE = 'https://api.zenexnetwork.com';
-        const ZENEX_API_KEY = 'ZNX_5N3NLP36B6TNR6OGHKOX2JML';
-        const ZENEX_HEADERS = {
-            'mapikey': ZENEX_API_KEY,
-            'Content-Type': 'application/json'
-        };
         
         let currentUser = null;
         let verificationCode = '';
@@ -417,7 +407,7 @@
         let provisionedNumbers = [];
 
         // ==========================================
-        // 3. AUTH FUNCTIONS
+        // 2. AUTH FUNCTIONS
         // ==========================================
         function switchTab(tab) {
             const loginForm = document.getElementById('loginForm');
@@ -606,8 +596,9 @@
         }
 
         // ==========================================
-        // 4. ZENEX API FUNCTIONS
+        // 3. ZENEX API FUNCTIONS (USING /api/zenex PROXY)
         // ==========================================
+        
         async function getNumber() {
             const range = document.getElementById('numberRange').value.trim();
             if (!range) { alert('Please enter a range'); return; }
@@ -617,21 +608,16 @@
             btn.innerHTML = '⏳ Processing...';
 
             try {
-                const response = await fetch(`${ZENEX_API_BASE}/v1/getnum`, {
+                // ✅ USING Vercel API ROUTE instead of direct Zenex call
+                const response = await fetch('/api/zenex?action=getnum', {
                     method: 'POST',
-                    headers: ZENEX_HEADERS,
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         range: range,
                         is_national: document.getElementById('nationalFormat').checked,
                         remove_plus: document.getElementById('removePlus').checked
                     })
                 });
-
-                const contentType = response.headers.get('content-type');
-                if (!contentType || !contentType.includes('application/json')) {
-                    const text = await response.text();
-                    throw new Error(`API returned HTML instead of JSON. Status: ${response.status}`);
-                }
 
                 const data = await response.json();
                 
@@ -642,7 +628,7 @@
                     alert(`✅ Success!\nNumber: ${data.data.number}`);
                     document.getElementById('numberRange').value = '';
                 } else {
-                    throw new Error(data.message || 'Failed');
+                    throw new Error(data.message || data.error || 'Failed');
                 }
             } catch (error) {
                 alert(`❌ Error: ${error.message}\n\nCheck browser console for details.`);
@@ -661,8 +647,6 @@
             document.getElementById('totalNumbers').textContent = total;
             document.getElementById('successNumbers').textContent = success;
             document.getElementById('failedNumbers').textContent = total - success;
-            const rate = total > 0 ? (success / total * 100).toFixed(1) : 0;
-            document.getElementById('successRateText')?.textContent = rate + '%';
         }
 
         function addToFeed(numberData) {
@@ -681,15 +665,10 @@
             const statusBadge = document.getElementById('consoleStatus');
             
             try {
-                const response = await fetch(`${ZENEX_API_BASE}/v1/numsuccess/info`, {
-                    method: 'GET',
-                    headers: ZENEX_HEADERS
+                // ✅ USING Vercel API ROUTE instead of direct Zenex call
+                const response = await fetch('/api/zenex?action=numsuccess', {
+                    method: 'GET'
                 });
-
-                const contentType = response.headers.get('content-type');
-                if (!contentType || !contentType.includes('application/json')) {
-                    throw new Error(`API returned HTML. Status: ${response.status}`);
-                }
 
                 const result = await response.json();
                 
@@ -703,8 +682,9 @@
                         let html = `<div style="color: #10b981; margin-bottom: 15px; font-weight: bold;">✅ ${otps.length} OTP(s)</div>`;
                         otps.forEach(otp => {
                             html += `<div style="background: rgba(16,185,129,0.1); padding: 15px; border-radius: 8px; margin: 10px 0;">
-                                <div style="color: #3b82f6; font-weight: bold;">📱 ${otp.number}</div>
+                                <div style="color: #3b82f6; font-weight: bold;">📱 ${otp.number} (${otp.country})</div>
                                 <div style="color: #e2e8f0; font-size: 18px; margin: 10px 0; font-family: monospace;">${otp.otp}</div>
+                                <div style="color: #94a3b8; font-size: 12px;">📡 ${otp.operator} | 🕐 ${otp.created_at}</div>
                             </div>`;
                         });
                         output.innerHTML = html;
@@ -712,7 +692,7 @@
                     statusBadge.textContent = 'LIVE';
                     statusBadge.className = 'success-badge';
                 } else {
-                    throw new Error(result.message || 'API Error');
+                    throw new Error(result.message || result.error || 'API Error');
                 }
             } catch (error) {
                 output.innerHTML = `<div style="color: #ef4444;">❌ ${error.message}</div>`;
@@ -752,7 +732,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             console.log('✅ MH SMS PANEL Loaded');
             console.log('✅ Firebase Initialized');
-            console.log('✅ Zenex API:', ZENEX_API_BASE);
+            console.log('✅ Using /api/zenex proxy');
         });
     </script>
 </body>
