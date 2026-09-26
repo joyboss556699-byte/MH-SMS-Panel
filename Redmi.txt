@@ -1,0 +1,5 @@
+ZENEX WEBSITE FILES
+
+API configuration is handled only in index.html.
+
+Redmi.txt does not contain an API key.
